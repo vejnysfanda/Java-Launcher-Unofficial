@@ -18,7 +18,7 @@ An unofficial Minecraft: Java Edition launcher for iOS, based on PojavLauncher a
 
 ## Credits
 
-- PojavLauncher and Amethyst contributors — upstream projects.
+- [PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher_iOS) and Amethyst contributors — upstream projects.
 - Dualboot Gaming — maintenance and device testing.
 - CheatGPT (ChatGPT) — AI-assisted development.
 
