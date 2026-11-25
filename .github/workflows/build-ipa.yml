@@ -1,0 +1,31 @@
+name: Build Java Launcher IPA
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore external dependencies
+        run: |
+          git submodule update --init --recursive
+          git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | while read -r key path; do
+            if [ ! -d "$path/.git" ] && [ ! -f "$path/.git" ]; then
+              url=$(git config -f .gitmodules --get "${key%.path}.url")
+              git clone --depth 1 --recurse-submodules "$url" "$path"
+            fi
+          done
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install dependencies
+        run: brew install make ldid temurin@8
+      - name: Build IPA
+        run: gmake -j$(sysctl -n hw.ncpu) package PLATFORM=2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Java-Launcher-Unofficial-1.0.2
+          path: artifacts/com.dualboot-gaming.mcjavalauncher-*-ios.ipa
+          if-no-files-found: error
