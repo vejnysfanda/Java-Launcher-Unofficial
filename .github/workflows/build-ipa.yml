@@ -10,12 +10,23 @@ jobs:
       - uses: actions/checkout@v4
       - name: Restore external dependencies
         run: |
-          git submodule update --init --recursive
+          set -euo pipefail
+          # The imported source ZIP omitted Git submodule commit pointers.
+          # Recover the exact gitlinks from the original Amethyst source commit.
+          upstream=54d20f9a7b22c8cadc026cbad8eb1a386a1e6efe
+          git fetch --no-tags --depth=1 https://github.com/Taylen27/Amethyst-iOS.git "$upstream"
           git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | while read -r key path; do
-            if [ ! -d "$path/.git" ] && [ ! -f "$path/.git" ]; then
-              url=$(git config -f .gitmodules --get "${key%.path}.url")
-              git clone --depth 1 --recurse-submodules "$url" "$path"
-            fi
+            url=$(git config -f .gitmodules --get "${key%.path}.url")
+            entry=$(git ls-tree "$upstream" -- "$path")
+            read -r mode type sha ignored <<< "$entry"
+            test "$mode" = 160000
+            test "$type" = commit
+            echo "Restoring $path at $sha"
+            git init "$path"
+            git -C "$path" fetch --no-tags --depth=1 "$url" "$sha"
+            git -C "$path" checkout --detach FETCH_HEAD
+            git -C "$path" remote get-url origin >/dev/null 2>&1 || git -C "$path" remote add origin "$url"
+            git -C "$path" submodule update --init --recursive
           done
       - uses: maxim-lobanov/setup-xcode@v1
         with:
